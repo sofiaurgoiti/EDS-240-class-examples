@@ -1,0 +1,181 @@
+---
+title: "Lecture 1.3"
+date: 2024-01-08
+editor_options: 
+  chunk_output_type: console
+---
+
+## Load packages
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+```
+
+
+## Tidy Data
+
+```{r}
+# untidy data ----
+temp_data_wide <- tribble(
+  ~date, ~station1, ~station2,  ~station3,
+  "2023-10-01", 30.1, 29.8,  31.2,
+  "2023-11-01", 28.6, 29.1,  33.4,
+  "2023-12-01", 29.9, 28.5,  32.3
+)
+
+# make tidy ---- also known as long format
+temp_data_long <- temp_data_wide |> #pipe operator, what's difference with %>%
+  pivot_longer(cols = starts_with("station"), 
+               names_to = "station_id", #title of new column
+               values_to = "temp_c") #the values of that column
+```
+
+
+## Palmer Penguins
+
+```{r}
+#Factor variables: treat these as groups!
+
+length(unique(penguin$species)) #how many obs in a column
+```
+
+
+## Plot 1
+
+```{r}
+
+#piping into a ggplot
+penguins |>
+  ggplot(aes(x = bill_length_mm,
+             y = bill_depth_mm))
+
+#ggplot() +
+  #geom_point(data = penguins,
+             #mapping = aes(x = bill_length_mm,
+                           #y = bill_depth_mm))
+
+#Mapping helps when adding multiple layers of data!
+#define our aesthetics, more often you don't need the mapping argument explicitly stated. Another way to write this is: ggplot(penguins, aes()) - as long as the arguments are stated in the order it works!
+
+#mapping color globally ---
+ggplot(data = penguins, 
+       mapping = aes(x = bill_length_mm,
+                     y = bill_depth_mm,
+                     color = species)) + 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  scale_colour_manual(values = c("darkorange", "purple", "cyan4")) #vector of colours that matches # variables, you can also use "hex" colour codes: #CETVO6 
+
+# mapping color locally --- only map color based on species and points, does not apply to all layers of plot
+ggplot(na.omit(penguins), aes(x = bill_length_mm,
+                              y = bill_depth_mm)) +
+  geom_point(aes(color = species)) +
+  geom_smooth(method = "lm") 
+  
+
+# Continuous coloring
+ggplot(penguins, aes(x = body_mass_g, 
+                     y = flipper_length_mm, 
+                     color = body_mass_g)) + #numerical value
+  geom_point() +
+  scale_color_gradient(low = "#132B43", high = "#F7DD4C")
+```
+
+
+
+## Plot 2
+
+- Statistical transformations
+- Position adjustments
+- Coordinate System ...
+
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar()
+
+#Default underlying stat = "count"
+```
+
+
+```{r}
+#Overriding geom bar's stat:
+
+penguins_summary <- penguins |>
+  count(species)
+
+ggplot(penguins_summary, aes(x = species, y = n)) +
+  geom_bar(stat = "identity") #that's the value in datasets
+#height of the bar is equal to identity of this cell
+
+
+```
+
+Override default stat mapping: 
+
+```{r}
+
+ggplot(penguins, aes(x = species,
+       y = after_stat(prop),
+       group = 1)) +
+  geom_bar() #we wanna consider the whole dataset (and not by each species group)
+```
+
+
+Position adjustments:
+
+```{r}
+
+ggplot(penguins, aes(x = species, fill = island)) + #fill and not color: fill if a big area for bars, if it's a point it will be color
+  geom_bar()
+
+#Stacked bar charts harder to interpret
+#default position is "stack" but we can change that
+
+ggplot(penguins, aes(x = species, fill = island)) + #fill and not color: fill if a big area for bars, if it's a point it will be color
+  geom_bar(position = "fill") #makes all bars same height
+
+ggplot(penguins, aes(x = species, fill = island)) + #fill and not color: fill if a big area for bars, if it's a point it will be color
+  geom_bar(position = "dodge")
+
+#You can finetune this a bit more: make the abrs equally thick
+ggplot(penguins, aes(x = species, fill = island)) + 
+  geom_bar(position = position_dodge2(preserve = "single"))
+
+```
+
+Coordinate systems + themes
+
+By default, it assumes a cartesian coordinate
+
+```{r}
+
+ggplot(penguins, aes(x = species)) +
+  geom_bar() + 
+  coord_flip() #for really long labels that don't fit in y axis
+ # coord_cartesian(): used by default by ggplot but is omitted
+
+ggplot(penguins, aes(x = species)) +
+  geom_bar() + 
+  coord_polar()
+
+```
+
+Themes: 
+
+customising non data elements of plot
+
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar() + 
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.title = element_text(size = 17, color = "purple")
+  )
+
+```
+
+
+
+
